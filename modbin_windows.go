@@ -6,20 +6,22 @@ import (
 )
 
 func modifyBinary(target uintptr, bytes []byte) {
-	function := entryAddress(target, len(bytes))
-
-	proc := syscall.NewLazyDLL("kernel32.dll").NewProc("VirtualProtect")
-	const PROT_READ_WRITE = 0x40
+	const pageReadWrite = 0x40
+	vp := syscall.NewLazyDLL("kernel32.dll").NewProc("VirtualProtect")
 	var old uint32
-	result, _, _ := proc.Call(target, uintptr(len(bytes)), uintptr(PROT_READ_WRITE), uintptr(unsafe.Pointer(&old)))
+	result, _, err := vp.Call(
+		target, uintptr(len(bytes)), pageReadWrite, uintptr(unsafe.Pointer(&old)),
+	) // #nosec
 	if result == 0 {
-		panic(result)
+		panic(err)
 	}
+	function := entryAddress(target, len(bytes))
 	copy(function, bytes)
-
 	var ignore uint32
-	result, _, _ = proc.Call(target, uintptr(len(bytes)), uintptr(old), uintptr(unsafe.Pointer(&ignore)))
+	result, _, err = vp.Call(
+		target, uintptr(len(bytes)), uintptr(old), uintptr(unsafe.Pointer(&ignore)),
+	) // #nosec
 	if result == 0 {
-		panic(result)
+		panic(err)
 	}
 }

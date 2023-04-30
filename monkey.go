@@ -6,5 +6,10 @@ import (
 )
 
 func entryAddress(p uintptr, l int) []byte {
-	return *(*[]byte)(unsafe.Pointer(&reflect.SliceHeader{Data: p, Len: l, Cap: l}))
+	var b []byte
+	sh := (*reflect.SliceHeader)(unsafe.Pointer(&b)) // #nosec
+	sh.Data = p
+	sh.Len = l
+	sh.Cap = l
+	return b
 }
