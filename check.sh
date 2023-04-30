@@ -100,11 +100,6 @@ function check() {
   esac
 }
 
-function echo_line() {
-  echo ================================================
-  echo
-}
-
 function set_exit_code() {
   if [$? != 0]
   then
@@ -112,6 +107,11 @@ function set_exit_code() {
   else
     echo pass
   fi
+}
+
+function echo_line() {
+  echo ================================================
+  echo
 }
 
 main $1
