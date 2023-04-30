@@ -39,26 +39,26 @@ exit /b %exit_code%
 
   if "%1" == "-golint" (
     golint -set_exit_status -min_confidence 0.3 ./...
-    call :echo_line
     call :set_exit_code
+    call :echo_line
     goto END
   )
   if "%1" == "-gocyclo" (
     gocyclo -avg -over 15 .
-    call :echo_line
     call :set_exit_code
+    call :echo_line
     goto END
   )
   if "%1" == "-cilint" (
     golangci-lint run ./...
-    call :echo_line
     call :set_exit_code
+    call :echo_line
     goto END
   )
   if "%1" == "-gosec" (
     gosec -quiet ./...
-    call :echo_line
     call :set_exit_code
+    call :echo_line
     goto END
   )
 
@@ -97,18 +97,18 @@ exit /b %exit_code%
   goto END
 rem end
 
-:echo_line
-  echo ================================================
-  echo:
-  goto END
-rem end
-
 :set_exit_code
   if not %ERRORLEVEL% == 0 (
     set exit_code=1
   ) else (
     echo pass
   )
+  goto END
+rem end
+
+:echo_line
+  echo ================================================
+  echo:
   goto END
 rem end
 
