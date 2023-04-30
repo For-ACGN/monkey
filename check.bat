@@ -29,7 +29,13 @@ call :check %1
 set GOARCH=arm64
 call :check %1
 
-echo exit code: %exit_code%
+rem check exit code
+if %exit_code% == 0 (
+  echo all check passed
+) else (
+  echo exit code: %exit_code%
+)
+
 exit /b %exit_code%
 
 :check

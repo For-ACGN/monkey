@@ -30,6 +30,14 @@ function main() {
   export GOARCH=arm64
   check $1
 
+  # check exit code
+  if [$exit_code == 0]
+  then
+    echo all check passed
+  else
+    echo exit code: $exit_code
+  fi
+
   return $exit_code
 }
 
