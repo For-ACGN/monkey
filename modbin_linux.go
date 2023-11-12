@@ -26,7 +26,3 @@ func mProtectCrossPage(address uintptr, length int, protect int) error {
 	}
 	return nil
 }
-
-func pageStart(ptr uintptr) uintptr {
-	return ptr & ^(uintptr(syscall.Getpagesize() - 1))
-}
