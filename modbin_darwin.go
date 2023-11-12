@@ -1,32 +1,27 @@
 package monkey
 
-import "syscall"
+import (
+	"fmt"
+	"reflect"
+	"syscall"
+	"unsafe"
+)
 
 func modifyBinary(target uintptr, bytes []byte) {
-	protect := syscall.PROT_READ | syscall.PROT_WRITE | syscall.PROT_EXEC
-	err := mProtectCrossPage(target, len(bytes), protect)
-	if err != nil {
-		panic(err)
-	}
-	function := entryAddress(target, len(bytes))
-	copy(function, bytes)
-	err = mProtectCrossPage(target, len(bytes), syscall.PROT_READ|syscall.PROT_EXEC)
-	if err != nil {
-		panic(err)
+	tp := pageStart(target)
+	ret := write(
+		target, ptrOf(bytes), len(bytes), tp, syscall.Getpagesize(),
+		syscall.PROT_READ|syscall.PROT_EXEC,
+	)
+	if ret != 0 {
+		panic(fmt.Errorf("failed to write memory, code %v", ret))
 	}
 }
 
-func mProtectCrossPage(address uintptr, length int, protect int) error {
-	pageSize := syscall.Getpagesize()
-	for p := pageStart(address); p < address+uintptr(length); p += uintptr(pageSize) {
-		page := entryAddress(p, pageSize)
-		if err := syscall.Mprotect(page, protect); err != nil {
-			return err
-		}
-	}
-	return nil
+func ptrOf(val []byte) uintptr {
+	return (*reflect.SliceHeader)(unsafe.Pointer(&val)).Data
 }
 
-func pageStart(ptr uintptr) uintptr {
-	return ptr & ^(uintptr(syscall.Getpagesize() - 1))
-}
+//go:cgo_import_dynamic mach_task_self mach_task_self "/usr/lib/libSystem.B.dylib"
+//go:cgo_import_dynamic mach_vm_protect mach_vm_protect "/usr/lib/libSystem.B.dylib"
+func write(target, data uintptr, len int, page uintptr, pageSize, oriProt int) int
