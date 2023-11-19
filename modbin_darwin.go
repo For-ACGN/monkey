@@ -19,7 +19,7 @@ func modifyBinary(target uintptr, bytes []byte) {
 }
 
 func ptrOf(val []byte) uintptr {
-	return (*reflect.SliceHeader)(unsafe.Pointer(&val)).Data
+	return (*reflect.SliceHeader)(unsafe.Pointer(&val)).Data // #nosec
 }
 
 //go:cgo_import_dynamic mach_task_self mach_task_self "/usr/lib/libSystem.B.dylib"

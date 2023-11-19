@@ -51,6 +51,6 @@ func wireupOP(opc uint32, rd, rj uint32, val uintptr) []byte {
 		m |= (uint32(val) & 0xFFFF) << 10 // si16
 	}
 	op := make([]byte, 4)
-	*(*uint32)(unsafe.Pointer(&op[0])) = m
+	*(*uint32)(unsafe.Pointer(&op[0])) = m // #nosec
 	return op
 }
