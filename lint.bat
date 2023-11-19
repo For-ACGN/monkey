@@ -1,6 +1,6 @@
 @echo off
 
-rem go1.20
+rem go1.21
 
 set exit_code=0
 
@@ -20,6 +20,8 @@ call :check %1
 set GOARCH=386
 call :check %1
 set GOARCH=arm64
+call :check %1
+set GOARCH=loong64
 call :check %1
 
 rem darwin

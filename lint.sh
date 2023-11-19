@@ -13,6 +13,8 @@ function main() {
   check $1
   export GOARCH=arm64
   check $1
+  export GOARCH=loong64
+  check $1
 
   # windows
   export GOOS=windows
