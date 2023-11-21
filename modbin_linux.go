@@ -1,18 +1,21 @@
 package monkey
 
-import "syscall"
+import (
+	"fmt"
+	"syscall"
+)
 
 func modifyBinary(target uintptr, bytes []byte) {
 	protect := syscall.PROT_READ | syscall.PROT_WRITE | syscall.PROT_EXEC
 	err := mProtectCrossPage(target, len(bytes), protect)
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("failed to call Mprotect: %s", err))
 	}
 	function := entryAddress(target, len(bytes))
 	copy(function, bytes)
 	err = mProtectCrossPage(target, len(bytes), syscall.PROT_READ|syscall.PROT_EXEC)
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("failed to call Mprotect: %s", err))
 	}
 }
 

@@ -14,7 +14,7 @@ func modifyBinary(target uintptr, bytes []byte) {
 		syscall.PROT_READ|syscall.PROT_EXEC,
 	)
 	if ret != 0 {
-		panic(fmt.Errorf("failed to write memory, code %v", ret))
+		panic(fmt.Sprintf("failed to write memory, code: %v", ret))
 	}
 }
 
