@@ -3,18 +3,18 @@ package monkey
 import "unsafe"
 
 const (
-	regR0  uint32 = 0
-	regR29        = 29
-	regR30        = 30
+	regR0  = 0
+	regR29 = 29
+	regR30 = 30
 )
 
 const (
-	opORI    uint32 = 0x00E << 22
-	opLU12IW        = 0x00A << 25
-	opLU32ID        = 0x00B << 25
-	opLU52ID        = 0x00C << 22
-	opLDD           = 0x0A3 << 22
-	opJIRL          = 0x013 << 26
+	opORI    = 0x00E << 22
+	opLU12IW = 0x00A << 25
+	opLU32ID = 0x00B << 25
+	opLU52ID = 0x00C << 22
+	opLDD    = 0x0A3 << 22
+	opJIRL   = 0x013 << 26
 )
 
 func buildJMPDirective(double uintptr) []byte {
