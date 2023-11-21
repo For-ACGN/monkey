@@ -1,4 +1,4 @@
-// Customized reflect package for gomonkey，copy most code from go/src/reflect/type.go
+// customized reflect package for monkey, copy most code from go/src/reflect/type.go
 
 package creflect
 
