@@ -1,14 +1,23 @@
 package monkey
 
 import (
+	"fmt"
 	"reflect"
 )
 
 // Patch is used to patch common function.
 func Patch(target, patch interface{}) *PatchGuard {
-	pg := PatchGuard{}
 	t := reflect.ValueOf(target)
-	d := reflect.ValueOf(patch)
-	pg.patchFunc(t, d)
+	p := reflect.ValueOf(patch)
+	pg := PatchGuard{
+		target: t,
+		patch:  p,
+	}
+	switch kind := t.Kind(); kind {
+	case reflect.Func:
+		pg.patchFunc(t, p)
+	default:
+		panic(fmt.Sprintf("invalid target kind: %s", kind))
+	}
 	return &pg
 }
