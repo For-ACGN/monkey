@@ -5,15 +5,15 @@ import (
 	"syscall"
 )
 
-func modifyBinary(target uintptr, bytes []byte) {
+func modifyBinary(target uintptr, data []byte) {
 	protect := syscall.PROT_READ | syscall.PROT_WRITE | syscall.PROT_EXEC
-	err := mProtectCrossPage(target, len(bytes), protect)
+	err := mProtectCrossPage(target, len(data), protect)
 	if err != nil {
 		panic(fmt.Sprintf("failed to call Mprotect: %s", err))
 	}
-	function := entryAddress(target, len(bytes))
-	copy(function, bytes)
-	err = mProtectCrossPage(target, len(bytes), syscall.PROT_READ|syscall.PROT_EXEC)
+	function := readMemory(target, len(data))
+	copy(function, data)
+	err = mProtectCrossPage(target, len(data), syscall.PROT_READ|syscall.PROT_EXEC)
 	if err != nil {
 		panic(fmt.Sprintf("failed to call Mprotect: %s", err))
 	}
@@ -22,7 +22,7 @@ func modifyBinary(target uintptr, bytes []byte) {
 func mProtectCrossPage(address uintptr, length int, protect int) error {
 	pageSize := syscall.Getpagesize()
 	for p := pageStart(address); p < address+uintptr(length); p += uintptr(pageSize) {
-		page := entryAddress(p, pageSize)
+		page := readMemory(p, pageSize)
 		if err := syscall.Mprotect(page, protect); err != nil {
 			return err
 		}

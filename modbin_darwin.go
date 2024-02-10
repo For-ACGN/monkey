@@ -7,10 +7,10 @@ import (
 	"unsafe"
 )
 
-func modifyBinary(target uintptr, bytes []byte) {
+func modifyBinary(target uintptr, data []byte) {
 	tp := pageStart(target)
 	ret := write(
-		target, ptrOf(bytes), len(bytes), tp, syscall.Getpagesize(),
+		target, ptrOf(data), len(data), tp, syscall.Getpagesize(),
 		syscall.PROT_READ|syscall.PROT_EXEC,
 	)
 	if ret != 0 {
