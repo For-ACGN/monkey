@@ -17,11 +17,11 @@ const (
 	opJIRL   = 0x013 << 26
 )
 
-func buildJMPDirective(double uintptr) []byte {
-	bit110 := (double >> 0) & 0xFFF
-	bit3112 := (double >> 12) & 0xFFFFF
-	bit5132 := (double >> 32) & 0xFFFFF
-	bit6352 := (double >> 52) & 0xFFF
+func buildJMPDirective(addr uintptr) []byte {
+	bit110 := (addr >> 0) & 0xFFF
+	bit3112 := (addr >> 12) & 0xFFFFF
+	bit5132 := (addr >> 32) & 0xFFFFF
+	bit6352 := (addr >> 52) & 0xFFF
 	jmp := make([]byte, 0, 24)
 	jmp = append(jmp, wireupOP(opLU12IW, regR29, 0, bit3112)...)      // lu12i.w r29, bit3112
 	jmp = append(jmp, wireupOP(opORI, regR29, regR29, bit110)...)     // ori     r29, r29, bit110

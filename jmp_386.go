@@ -1,13 +1,13 @@
 package monkey
 
-func buildJMPDirective(double uintptr) []byte {
-	d0 := byte(double)
-	d1 := byte(double >> 8)
-	d2 := byte(double >> 16)
-	d3 := byte(double >> 24)
+func buildJMPDirective(addr uintptr) []byte {
+	d0 := byte(addr)
+	d1 := byte(addr >> 8)
+	d2 := byte(addr >> 16)
+	d3 := byte(addr >> 24)
 	jmp := []byte{
-		0xBA, d0, d1, d2, d3, // MOV edx, double
-		0xFF, 0x22, // JMP [edx]
+		0xBA, d0, d1, d2, d3, // mov edx, addr
+		0xFF, 0x22, // jmp [edx]
 	}
 	return jmp
 }
