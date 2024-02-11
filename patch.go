@@ -21,10 +21,9 @@ func (pg *PatchGuard) patchFunc(target, patch reflect.Value) {
 	targetAddr := *(*uintptr)(getPointer(target))
 	patchAddr := uintptr(getPointer(patch))
 	jmp := buildJMPDirective(patchAddr)
-	data := readMemory(targetAddr, len(jmp))
-	original := make([]byte, len(data))
-	copy(original, data)
-	modifyBinary(targetAddr, jmp)
+	original := make([]byte, len(jmp))
+	copy(original, readMemory(targetAddr, len(jmp)))
+	writeMemory(targetAddr, jmp)
 	pg.target = targetAddr
 	pg.original = original
 	pg.patch = jmp
@@ -82,12 +81,12 @@ func checkFunc(target, patch reflect.Type) {
 
 // Unpatch is used to recovery the original about target.
 func (pg *PatchGuard) Unpatch() {
-	modifyBinary(pg.target, pg.original)
+	writeMemory(pg.target, pg.original)
 }
 
 // Restore is used to patch the target again.
 func (pg *PatchGuard) Restore() {
-	modifyBinary(pg.target, pg.patch)
+	writeMemory(pg.target, pg.patch)
 }
 
 func readMemory(p uintptr, l int) []byte {
