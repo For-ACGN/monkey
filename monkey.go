@@ -1,7 +1,6 @@
 package monkey
 
 import (
-	"fmt"
 	"reflect"
 )
 
@@ -9,15 +8,31 @@ import (
 func Patch(target, patch interface{}) *PatchGuard {
 	t := reflect.ValueOf(target)
 	p := reflect.ValueOf(patch)
-	pg := PatchGuard{
-		target: t,
-		patch:  p,
+	if t.Kind() != reflect.Func {
+		panic("target is not a function")
 	}
-	switch kind := t.Kind(); kind {
-	case reflect.Func:
-		pg.patchFunc(t, p)
+	pg := new(PatchGuard)
+	pg.patchFunc(t, p)
+	return pg
+}
+
+// PatchMethod is used to patch structure methods, it supports private
+// methods and private structure public and private methods, usually
+// the private structure is from interface.
+func PatchMethod(target interface{}, method string, patch interface{}) *PatchGuard {
+	t := reflect.ValueOf(target)
+	p := reflect.ValueOf(patch)
+	switch k := t.Kind(); k {
+	case reflect.Struct:
+	case reflect.Pointer:
+		if t.Elem().Kind() == reflect.Struct {
+			break
+		}
+		fallthrough
 	default:
-		panic(fmt.Sprintf("invalid target kind: %s", kind))
+		panic("target is not a structure or pointer")
 	}
-	return &pg
+	pg := new(PatchGuard)
+	pg.patchMethod(t, method, p)
+	return pg
 }
