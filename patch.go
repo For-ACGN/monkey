@@ -20,32 +20,38 @@ func (pg *PatchGuard) patchFunc(target, patch reflect.Value) {
 	checkFunc(target.Type(), patch.Type())
 	targetAddr := *(*uintptr)(getPointer(target))
 	patchAddr := uintptr(getPointer(patch))
-	jmp := buildJMPDirective(patchAddr)
-	original := make([]byte, len(jmp))
-	copy(original, readMemory(targetAddr, len(jmp)))
-	writeMemory(targetAddr, jmp)
-	pg.target = targetAddr
-	pg.original = original
-	pg.patch = jmp
+	pg.writePatch(targetAddr, patchAddr)
 }
 
 func (pg *PatchGuard) patchMethod(target reflect.Value, method string, patch reflect.Value) {
 	if method == "" {
 		panic("empty method")
 	}
+	targetType := target.Type()
+	patchType := patch.Type()
+	var targetAddr uintptr
 	if unicode.IsLower([]rune(method)[0]) {
-		creflect.MethodByName(target.Type(), method)
+		m, ok := creflect.MethodByName(targetType, method)
+		if !ok {
+			panic("failed to get method by name")
+		}
+		targetAddr = *(*uintptr)(m)
 	} else {
-		target.MethodByName(method)
+		m, ok := targetType.MethodByName(method)
+		if !ok {
+			panic("failed to get method by name")
+		}
+		checkFunc(m.Func.Type(), patchType)
+		targetAddr = *(*uintptr)(getPointer(m.Func))
 	}
-
+	patchAddr := uintptr(getPointer(patch))
+	pg.writePatch(targetAddr, patchAddr)
 }
 
 func checkFunc(target, patch reflect.Type) {
 	if patch.Kind() != reflect.Func {
 		panic("patch is not a function")
 	}
-
 	// check the number of the function parameter and return value are equal
 	invalidIn := target.NumIn() != patch.NumIn()
 	invalidOut := target.NumOut() != patch.NumOut()
@@ -55,7 +61,6 @@ func checkFunc(target, patch reflect.Type) {
 		const format = "target type(%s) and patch type(%s) are different"
 		panic(fmt.Sprintf(format, target, patch))
 	}
-
 	// check the function parameters type are equal
 	for i, size := 0, patch.NumIn(); i < size; i++ {
 		targetIn := target.In(i)
@@ -66,7 +71,6 @@ func checkFunc(target, patch reflect.Type) {
 		const format = "target type(%s) and patch type(%s) are different"
 		panic(fmt.Sprintf(format, target, patch))
 	}
-
 	// check the function return values type are equal
 	for i, size := 0, patch.NumOut(); i < size; i++ {
 		targetOut := target.Out(i)
@@ -79,6 +83,17 @@ func checkFunc(target, patch reflect.Type) {
 	}
 }
 
+func (pg *PatchGuard) writePatch(target, patch uintptr) {
+	jmp := buildJMPDirective(patch)
+	mem := readMemory(target, len(jmp))
+	original := make([]byte, len(mem))
+	copy(original, mem)
+	writeMemory(target, jmp)
+	pg.target = target
+	pg.original = original
+	pg.patch = jmp
+}
+
 // Unpatch is used to recovery the original about target.
 func (pg *PatchGuard) Unpatch() {
 	writeMemory(pg.target, pg.original)
@@ -89,12 +104,12 @@ func (pg *PatchGuard) Restore() {
 	writeMemory(pg.target, pg.patch)
 }
 
-func readMemory(p uintptr, l int) []byte {
+func readMemory(address uintptr, size int) []byte {
 	var b []byte
 	sh := (*reflect.SliceHeader)(unsafe.Pointer(&b)) // #nosec
-	sh.Data = p
-	sh.Len = l
-	sh.Cap = l
+	sh.Data = address
+	sh.Len = size
+	sh.Cap = size
 	return b
 }
 
