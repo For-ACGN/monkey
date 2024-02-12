@@ -26,3 +26,7 @@ func (w Writer) Println() (int, error) {
 func (w *Writer) print() (int, error) {
 	return fmt.Println(string(w.data))
 }
+
+func (w Writer) println() (int, error) {
+	return fmt.Println(string(w.data))
+}
