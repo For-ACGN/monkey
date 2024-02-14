@@ -20,7 +20,7 @@ func (pg *PatchGuard) patchFunc(target, patch reflect.Value) {
 	checkFunc(target.Type(), patch.Type())
 	targetAddr := *(*uintptr)(getPointer(target))
 	patchAddr := uintptr(getPointer(patch))
-	pg.writePatch(targetAddr, patchAddr)
+	pg.applyPatch(targetAddr, patchAddr)
 }
 
 func (pg *PatchGuard) patchMethod(target reflect.Value, method string, patch reflect.Value) {
@@ -45,7 +45,7 @@ func (pg *PatchGuard) patchMethod(target reflect.Value, method string, patch ref
 		targetAddr = *(*uintptr)(getPointer(m.Func))
 	}
 	patchAddr := uintptr(getPointer(patch))
-	pg.writePatch(targetAddr, patchAddr)
+	pg.applyPatch(targetAddr, patchAddr)
 }
 
 func checkFunc(target, patch reflect.Type) {
@@ -83,7 +83,7 @@ func checkFunc(target, patch reflect.Type) {
 	}
 }
 
-func (pg *PatchGuard) writePatch(target, patch uintptr) {
+func (pg *PatchGuard) applyPatch(target, patch uintptr) {
 	jmp := buildJMPDirective(patch)
 	mem := readMemory(target, len(jmp))
 	original := make([]byte, len(mem))

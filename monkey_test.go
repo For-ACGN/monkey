@@ -37,7 +37,7 @@ func TestPatch(t *testing.T) {
 	require.Equal(t, "what!!!\n", output)
 }
 
-func TestPatchMethod(t *testing.T) {
+func TestPatchMethod_Public(t *testing.T) {
 	t.Run("common", func(t *testing.T) {
 		w := new(testdata.Writer)
 		n, err := w.Write([]byte("hello!"))
@@ -45,7 +45,7 @@ func TestPatchMethod(t *testing.T) {
 		require.Equal(t, 7, n)
 		n, err = w.Print()
 		require.NoError(t, err)
-		require.Equal(t, 7, n)
+		require.Equal(t, 8, n)
 
 		patch := func(*testdata.Writer) (int, error) {
 			return fmt.Println("oh!")
@@ -60,7 +60,7 @@ func TestPatchMethod(t *testing.T) {
 		pg.Unpatch()
 		n, err = w.Print()
 		require.NoError(t, err)
-		require.Equal(t, 7, n)
+		require.Equal(t, 8, n)
 
 		pg.Restore()
 		n, err = w.Print()
@@ -102,7 +102,7 @@ func TestPatchMethod(t *testing.T) {
 		require.Equal(t, 7, n)
 		n, err = w.Println()
 		require.NoError(t, err)
-		require.Equal(t, 8, n)
+		require.Equal(t, 7, n)
 
 		patch := func(testdata.Writer) (int, error) {
 			return 0, nil
@@ -117,7 +117,69 @@ func TestPatchMethod(t *testing.T) {
 		pg.Unpatch()
 		n, err = w.Println()
 		require.NoError(t, err)
+		require.Equal(t, 7, n)
+
+		pg.Restore()
+		n, err = w.Println()
+		require.NoError(t, err)
+		require.Zero(t, n)
+	})
+}
+
+func TestPatchMethod_Private(t *testing.T) {
+	t.Run("common", func(t *testing.T) {
+		w := new(testdata.Writer)
+		n, err := w.Write([]byte("hello!"))
+		require.NoError(t, err)
+		require.Equal(t, 7, n)
+		n, err = w.Print()
+		require.NoError(t, err)
 		require.Equal(t, 8, n)
+
+		patch := func(*testdata.Writer) (int, error) {
+			return fmt.Println("oh!")
+		}
+		pg := PatchMethod(w, "print", patch)
+		defer pg.Unpatch()
+
+		n, err = w.Print()
+		require.NoError(t, err)
+		require.Equal(t, 5, n)
+
+		pg.Unpatch()
+		n, err = w.Print()
+		require.NoError(t, err)
+		require.Equal(t, 8, n)
+
+		pg.Restore()
+		n, err = w.Print()
+		require.NoError(t, err)
+		require.Equal(t, 5, n)
+	})
+
+	t.Run("not pointer receiver", func(t *testing.T) {
+		w := testdata.Writer{}
+		n, err := w.Write([]byte("hello!"))
+		require.NoError(t, err)
+		require.Equal(t, 7, n)
+		n, err = w.Println()
+		require.NoError(t, err)
+		require.Equal(t, 7, n)
+
+		patch := func(testdata.Writer) (int, error) {
+			return 0, nil
+		}
+		pg := PatchMethod(w, "println", patch)
+		defer pg.Unpatch()
+
+		n, err = w.Println()
+		require.NoError(t, err)
+		require.Zero(t, n)
+
+		pg.Unpatch()
+		n, err = w.Println()
+		require.NoError(t, err)
+		require.Equal(t, 7, n)
 
 		pg.Restore()
 		n, err = w.Println()
