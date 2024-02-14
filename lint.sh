@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# go1.21
-
 function main() {
   export exit_code=0
 

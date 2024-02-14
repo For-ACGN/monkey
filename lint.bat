@@ -1,7 +1,5 @@
 @echo off
 
-rem go1.21
-
 set exit_code=0
 
 rem windows
