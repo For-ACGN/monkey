@@ -25,26 +25,42 @@ func (pg *PatchGuard) patchFunc(target, patch reflect.Value) {
 
 func (pg *PatchGuard) patchMethod(target reflect.Value, method string, patch reflect.Value) {
 	if method == "" {
-		panic("empty method")
+		panic("empty method name ")
 	}
-	targetType := target.Type()
-	patchType := patch.Type()
-	var targetAddr uintptr
+	var (
+		targetAddr uintptr
+		patchAddr  uintptr
+	)
 	if unicode.IsLower([]rune(method)[0]) {
-		m, ok := creflect.MethodByName(targetType, method)
+		m, ok := creflect.MethodByName(target.Type(), method)
 		if !ok {
-			panic("failed to get method by name")
+			panic(fmt.Sprintf("failed to get method by name: %s\n", method))
 		}
 		targetAddr = *(*uintptr)(m)
+		patchAddr = uintptr(getPointer(patch))
 	} else {
-		m, ok := targetType.MethodByName(method)
+		m, ok := target.Type().MethodByName(method)
 		if !ok {
-			panic("failed to get method by name")
+			panic(fmt.Sprintf("failed to get method by name: %s\n", method))
 		}
-		checkFunc(m.Func.Type(), patchType)
+		// process when receiver is private structure
+		patchType := patch.Type()
+		checkFunc(m.Type, patchType)
+		numArgs := patchType.NumIn()
+		wrapper := reflect.MakeFunc(m.Type, func(args []reflect.Value) []reflect.Value {
+			newArgs := make([]reflect.Value, numArgs)
+			for i := 0; i < len(newArgs); i++ {
+				newArgs[i] = args[i].Convert(patchType.In(i))
+			}
+			if patchType.IsVariadic() {
+				return patch.CallSlice(newArgs)
+			}
+			return patch.Call(newArgs)
+		})
+		checkFunc(m.Type, wrapper.Type())
 		targetAddr = *(*uintptr)(getPointer(m.Func))
+		patchAddr = uintptr(getPointer(wrapper))
 	}
-	patchAddr := uintptr(getPointer(patch))
 	pg.applyPatch(targetAddr, patchAddr)
 }
 
