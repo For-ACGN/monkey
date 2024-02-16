@@ -7,6 +7,11 @@ import (
 	"unsafe"
 )
 
+type tflag uint8
+type nameOff int32 // offset to a name
+type typeOff int32 // offset to an *rtype
+type textOff int32 // offset from top of text section
+
 // rtype is the common implementation of most values.
 // rtype must be kept in sync with ../runtime/type.go:/^type._type.
 type rtype struct {
@@ -57,7 +62,6 @@ func MethodByName(r reflect.Type, name string) (fn unsafe.Pointer, ok bool) {
 	if ut == nil {
 		return nil, false
 	}
-
 	for _, p := range ut.methods() {
 		if t.nameOff(p.name).name() == name {
 			return t.Method(p), true
@@ -66,26 +70,20 @@ func MethodByName(r reflect.Type, name string) (fn unsafe.Pointer, ok bool) {
 	return nil, false
 }
 
-func (t *rtype) Method(p method) (fn unsafe.Pointer) {
+func (t *rtype) Method(p method) unsafe.Pointer {
 	tfn := t.textOff(p.tfn)
-	fn = unsafe.Pointer(&tfn) // #nosec
-	return
+	return unsafe.Pointer(&tfn) // #nosec
 }
-
-type tflag uint8
-type nameOff int32 // offset to a name
-type typeOff int32 // offset to an *rtype
-type textOff int32 // offset from top of text section
 
 //go:linkname resolveTextOff reflect.resolveTextOff
 func resolveTextOff(rtype unsafe.Pointer, off int32) unsafe.Pointer
 
+//go:linkname resolveNameOff reflect.resolveNameOff
+func resolveNameOff(ptrInModule unsafe.Pointer, off int32) unsafe.Pointer
+
 func (t *rtype) textOff(off textOff) unsafe.Pointer {
 	return resolveTextOff(unsafe.Pointer(t), int32(off)) // #nosec
 }
-
-//go:linkname resolveNameOff reflect.resolveNameOff
-func resolveNameOff(ptrInModule unsafe.Pointer, off int32) unsafe.Pointer
 
 func (t *rtype) nameOff(off nameOff) name {
 	return name{(*byte)(resolveNameOff(unsafe.Pointer(t), int32(off)))} // #nosec
