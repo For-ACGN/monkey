@@ -11,6 +11,9 @@ func Patch(target, patch interface{}) *PatchGuard {
 	if t.Kind() != reflect.Func {
 		panic("target is not a function")
 	}
+	if p.Kind() != reflect.Func {
+		panic("patch is not a function")
+	}
 	pg := new(PatchGuard)
 	pg.patchFunc(t, p)
 	return pg
@@ -31,6 +34,9 @@ func PatchMethod(target interface{}, method string, patch interface{}) *PatchGua
 		fallthrough
 	default:
 		panic("target is not a structure or pointer")
+	}
+	if p.Kind() != reflect.Func {
+		panic("patch is not a function")
 	}
 	pg := new(PatchGuard)
 	pg.patchMethod(t, method, p)
