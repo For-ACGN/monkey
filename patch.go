@@ -17,7 +17,7 @@ type PatchGuard struct {
 }
 
 func (pg *PatchGuard) patchFunc(target, patch reflect.Value) {
-	checkFunc(target.Type(), patch.Type())
+	checkFuncType(target.Type(), patch.Type())
 	targetAddr := *(*uintptr)(getPointer(target))
 	patchAddr := uintptr(getPointer(patch))
 	pg.applyPatch(targetAddr, patchAddr)
@@ -25,12 +25,12 @@ func (pg *PatchGuard) patchFunc(target, patch reflect.Value) {
 
 func (pg *PatchGuard) patchMethod(target reflect.Value, method string, patch reflect.Value) {
 	if method == "" {
-		panic("empty method name ")
+		panic("empty method name")
 	}
-	if unicode.IsLower([]rune(method)[0]) {
-		pg.patchPrivateMethod(target, method, patch)
-	} else {
+	if unicode.IsUpper([]rune(method)[0]) {
 		pg.patchPublicMethod(target, method, patch)
+	} else {
+		pg.patchPrivateMethod(target, method, patch)
 	}
 }
 
@@ -39,24 +39,37 @@ func (pg *PatchGuard) patchPublicMethod(target reflect.Value, method string, pat
 	if !ok {
 		panic(fmt.Sprintf("failed to get method by name: %s\n", method))
 	}
-	// process when receiver is private structure
+	// check the type of first argument in patch is the receiver type
 	patchType := patch.Type()
-	checkFunc(m.Type, patchType)
-	numArgs := patchType.NumIn()
-
-	wrapper := reflect.MakeFunc(patchType, func(args []reflect.Value) []reflect.Value {
-		newArgs := make([]reflect.Value, numArgs)
-		for i := 0; i < len(newArgs); i++ {
-			newArgs[i] = args[i].Convert(patchType.In(i))
+	if patchType.NumIn() == 0 || patchType.In(0) != target.Type() {
+		// build new patch function type
+		numIn := patchType.NumIn()
+		in := make([]reflect.Type, numIn+1)
+		in[0] = target.Type()
+		for i := 0; i < numIn; i++ {
+			in[i+1] = patchType.In(i)
 		}
-		if patchType.IsVariadic() {
-			return patch.CallSlice(newArgs)
+		numOut := patchType.NumOut()
+		out := make([]reflect.Type, numOut)
+		for i := 0; i < numOut; i++ {
+			out[i] = patchType.Out(i)
 		}
-		return patch.Call(newArgs)
-	})
-	checkFunc(m.Type, wrapper.Type())
+		funcType := reflect.FuncOf(in, out, patchType.IsVariadic())
+		// create new patch function
+		rawPatch := patch
+		patch = reflect.MakeFunc(funcType, func(args []reflect.Value) []reflect.Value {
+			if rawPatch.Type().IsVariadic() {
+				return rawPatch.CallSlice(args[1:])
+			} else {
+				return rawPatch.Call(args[1:])
+			}
+		})
+		patchType = patch.Type()
+	}
+	// process when receiver is private structure
+	checkFuncType(m.Type, patchType)
 	targetAddr := *(*uintptr)(getPointer(m.Func))
-	patchAddr := uintptr(getPointer(wrapper))
+	patchAddr := uintptr(getPointer(patch))
 	pg.applyPatch(targetAddr, patchAddr)
 }
 
@@ -67,8 +80,7 @@ func (pg *PatchGuard) patchPrivateMethod(target reflect.Value, method string, pa
 	}
 	// check the first argument in patch is the receiver
 	patchType := patch.Type()
-
-	if patchType.NumIn() == 0 || !patchType.In(0).ConvertibleTo(target.Type()) {
+	if patchType.NumIn() == 0 || patchType.In(0) != target.Type() {
 
 	}
 
@@ -77,10 +89,7 @@ func (pg *PatchGuard) patchPrivateMethod(target reflect.Value, method string, pa
 	pg.applyPatch(targetAddr, patchAddr)
 }
 
-func checkFunc(target, patch reflect.Type) {
-	if patch.Kind() != reflect.Func {
-		panic("patch is not a function")
-	}
+func checkFuncType(target, patch reflect.Type) {
 	// check the number of the function parameter and return value are equal
 	invalidIn := target.NumIn() != patch.NumIn()
 	invalidOut := target.NumOut() != patch.NumOut()
