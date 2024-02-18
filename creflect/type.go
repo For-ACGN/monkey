@@ -1,5 +1,3 @@
-// customized reflect package for monkey, copy most code from go/src/reflect/type.go
-
 package creflect
 
 import (
@@ -11,6 +9,16 @@ type tflag uint8
 type nameOff int32 // offset to a name
 type typeOff int32 // offset to an *rtype
 type textOff int32 // offset from top of text section
+
+type funcValue struct {
+	_   uintptr
+	ptr unsafe.Pointer
+}
+
+func funcPointer(v reflect.Method) uintptr {
+	p := (*funcValue)(unsafe.Pointer(&v.Func)).ptr // #nosec
+	return *(*uintptr)(p)
+}
 
 // rtype is the common implementation of most values.
 // rtype must be kept in sync with ../runtime/type.go:/^type._type.
@@ -32,17 +40,8 @@ type rtype struct {
 
 func newType(t reflect.Type) *rtype {
 	i := *(*funcValue)(unsafe.Pointer(&t)) // #nosec
-	r := (*rtype)(i.p)
+	r := (*rtype)(i.ptr)
 	return r
-}
-
-type funcValue struct {
-	_ uintptr
-	p unsafe.Pointer
-}
-
-func funcPointer(v reflect.Method, ok bool) (unsafe.Pointer, bool) {
-	return (*funcValue)(unsafe.Pointer(&v.Func)).p, ok // #nosec
 }
 
 // MethodByName returns the method with that name in the type's
@@ -53,10 +52,20 @@ func funcPointer(v reflect.Method, ok bool) (unsafe.Pointer, bool) {
 //
 // For an interface type, the returned Method's Type field gives the
 // method signature, without a receiver, and the Func field is nil.
-func MethodByName(r reflect.Type, name string) (fn unsafe.Pointer, ok bool) {
+func MethodByName(r reflect.Type, name string) (*Method, bool) {
 	t := newType(r)
 	if r.Kind() == reflect.Interface {
-		return funcPointer(r.MethodByName(name))
+		m, ok := r.MethodByName(name)
+		if !ok {
+			return nil, false
+		}
+		method := &Method{
+			Func:       funcPointer(m),
+			NumIn:      m.Type.NumIn(),
+			NumOut:     m.Type.NumOut(),
+			IsVariadic: m.Type.IsVariadic(),
+		}
+		return method, true
 	}
 	ut := t.uncommon(r)
 	if ut == nil {
@@ -70,23 +79,45 @@ func MethodByName(r reflect.Type, name string) (fn unsafe.Pointer, ok bool) {
 	return nil, false
 }
 
-func (t *rtype) Method(p method) unsafe.Pointer {
+func (t *rtype) Method(p method) *Method {
+	mtyp := t.typeOff(p.mtyp)
+	ft := *(*funcType)(mtyp)
 	tfn := t.textOff(p.tfn)
-	return unsafe.Pointer(&tfn) // #nosec
+	return &Method{
+		Func:       *(*uintptr)(unsafe.Pointer(&tfn)), // #nosec,
+		NumIn:      1 + ft.NumIn(),                    // the first is receiver
+		NumOut:     ft.NumOut(),
+		IsVariadic: ft.IsVariadic(),
+	}
 }
+
+//go:linkname resolveNameOff reflect.resolveNameOff
+func resolveNameOff(ptrInModule unsafe.Pointer, off int32) unsafe.Pointer
+
+//go:linkname resolveTypeOff reflect.resolveTypeOff
+func resolveTypeOff(rtype unsafe.Pointer, off int32) unsafe.Pointer
 
 //go:linkname resolveTextOff reflect.resolveTextOff
 func resolveTextOff(rtype unsafe.Pointer, off int32) unsafe.Pointer
 
-//go:linkname resolveNameOff reflect.resolveNameOff
-func resolveNameOff(ptrInModule unsafe.Pointer, off int32) unsafe.Pointer
+func (t *rtype) nameOff(off nameOff) name {
+	return name{(*byte)(resolveNameOff(unsafe.Pointer(t), int32(off)))} // #nosec
+}
+
+func (t *rtype) typeOff(off typeOff) unsafe.Pointer {
+	return resolveTypeOff(unsafe.Pointer(t), int32(off)) // #nosec
+}
 
 func (t *rtype) textOff(off textOff) unsafe.Pointer {
 	return resolveTextOff(unsafe.Pointer(t), int32(off)) // #nosec
 }
 
-func (t *rtype) nameOff(off nameOff) name {
-	return name{(*byte)(resolveNameOff(unsafe.Pointer(t), int32(off)))} // #nosec
+// Method contains part information about Method Type.
+type Method struct {
+	Func       uintptr
+	NumIn      int
+	NumOut     int
+	IsVariadic bool
 }
 
 const (
@@ -113,6 +144,18 @@ type funcType struct {
 	rtype
 	inCount  uint16
 	outCount uint16 // top bit is set if last input parameter is ...
+}
+
+func (t *funcType) NumIn() int {
+	return int(t.inCount)
+}
+
+func (t *funcType) NumOut() int {
+	return int(t.outCount & (1<<15 - 1))
+}
+
+func (t *funcType) IsVariadic() bool {
+	return t.outCount&(1<<15) != 0
 }
 
 func add(p unsafe.Pointer, x uintptr) unsafe.Pointer {
