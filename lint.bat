@@ -1,12 +1,16 @@
 @echo off
 
-rem initialize environment variables
-set is_print_help=0
-set exit_code=0
-set exit_on_error=0
-
+call :init
 call :main %1 %2
 exit /b %exit_code%
+
+:init
+  rem initialize environment variables
+  set is_print_help=0
+  set exit_code=0
+  set exit_on_error=0
+goto :EOF
+rem END_init
 
 :main
   rem process print help information
@@ -15,15 +19,12 @@ exit /b %exit_code%
     call :print_help
     goto :EOF
   )
-
   rem process arguments
   if "%2" == "-e" (
     set exit_on_error=1
   )
-
   rem start check code
   call :check_all %1
-
   rem check exit code
   if %exit_code% == 0 (
     echo all check passed
@@ -43,10 +44,6 @@ rem END_main
     goto :EOF
   )
   if "%1" == "-h" (
-    set is_print_help=1
-    goto :EOF
-  )
-  if "%1" == "?" (
     set is_print_help=1
     goto :EOF
   )
