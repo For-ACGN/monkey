@@ -1,32 +1,34 @@
 @echo off
 
 rem initialize environment variables
-set print_help=0
+set is_print_help=0
 set exit_code=0
 set exit_on_error=0
 
-rem print help information
-if "%1" == "-help" (
-  set print_help=1
-)
-if "%1" == "--help" (
-  set print_help=1
-)
-if "%1" == "-h" (
-  set print_help=1
-)
-if "%1" == "/?" (
-  set print_help=1
-)
-if %print_help% == 1 (
-  call :print_help
-  goto :EOF
-)
+call :main %1 %2
+exit /b %exit_code%
 
-rem process arguments
-if "%2" == "-e" (
-  set exit_on_error=1
-)
+:main
+  rem process print help information
+  call :is_print_help %1
+  if %is_print_help% == 1 (
+    call :print_help
+    goto :EOF
+  )
+
+  rem process arguments
+  if "%2" == "-e" (
+    set exit_on_error=1
+  )
+
+
+  if %exit_code% == 0 (
+    echo all check passed
+  ) else (
+    echo exit code: %exit_code%
+  )
+goto :EOF
+rem END_main
 
 rem -----------------Windows-----------------
 set GOOS=windows
@@ -123,16 +125,21 @@ if not exit_code == 0 (
 )
 rem -----------------------------
 
-
-rem end of script
-:exit_bat
-if %exit_code% == 0 (
-  echo all check passed
-) else (
-  echo exit code: %exit_code%
-)
-exit /b %exit_code%
-rem END_exit_bat
+:is_print_help
+  if "%1" == "-help" (
+    set is_print_help=1
+  )
+  if "%1" == "--help" (
+    set is_print_help=1
+  )
+  if "%1" == "-h" (
+    set is_print_help=1
+  )
+  if "%1" == "/?" (
+    set is_print_help=1
+  )
+goto :EOF
+rem END_is_print_help
 
 :print_help
   echo Usage of lint:
