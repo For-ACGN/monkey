@@ -1,5 +1,10 @@
 @echo off
 
+rem initialize environment variables
+set exit_code=0
+set exit_on_error=0
+
+rem print help information
 if "%1" == "-help" (
   echo -golint
   echo -gocyclo
@@ -8,39 +13,108 @@ if "%1" == "-help" (
   goto :EOF
 )
 
+rem process arguments
 if "%2" == "-e" (
   set exit_on_error=1
 )
 
-set exit_code=0
-
-rem windows
+rem -----------------Windows-----------------
 set GOOS=windows
+rem -----------------------------
 set GOARCH=amd64
 call :check %1
+rem --------exit on error--------
+if not exit_code == 0 (
+  if %exit_on_error% == 1 (
+    goto :exit_bat
+  )
+)
+rem -----------------------------
 set GOARCH=386
 call :check %1
+rem --------exit on error--------
+if not exit_code == 0 (
+  if %exit_on_error% == 1 (
+    goto :exit_bat
+  )
+)
+rem -----------------------------
 set GOARCH=arm64
 call :check %1
+rem --------exit on error--------
+if not exit_code == 0 (
+  if %exit_on_error% == 1 (
+    goto :exit_bat
+  )
+)
+rem -----------------------------
 
-rem linux
+
+rem ------------------Linux------------------
 set GOOS=linux
+rem -----------------------------
 set GOARCH=amd64
 call :check %1
+rem --------exit on error--------
+if not exit_code == 0 (
+  if %exit_on_error% == 1 (
+    goto :exit_bat
+  )
+)
+rem -----------------------------
 set GOARCH=386
 call :check %1
+rem --------exit on error--------
+if not exit_code == 0 (
+  if %exit_on_error% == 1 (
+    goto :exit_bat
+  )
+)
+rem -----------------------------
 set GOARCH=arm64
 call :check %1
+rem --------exit on error--------
+if not exit_code == 0 (
+  if %exit_on_error% == 1 (
+    goto :exit_bat
+  )
+)
+rem -----------------------------
 set GOARCH=loong64
 call :check %1
+rem --------exit on error--------
+if not exit_code == 0 (
+  if %exit_on_error% == 1 (
+    goto :exit_bat
+  )
+)
+rem -----------------------------
 
-rem darwin
+
+rem -----------------Darwin------------------
 set GOOS=darwin
+rem -----------------------------
 set GOARCH=amd64
 call :check %1
+rem --------exit on error--------
+if not exit_code == 0 (
+  if %exit_on_error% == 1 (
+    goto :exit_bat
+  )
+)
+rem -----------------------------
 set GOARCH=arm64
 call :check %1
+rem --------exit on error--------
+if not exit_code == 0 (
+  if %exit_on_error% == 1 (
+    goto :exit_bat
+  )
+)
+rem -----------------------------
 
+
+rem end of script
 :exit_bat
 if %exit_code% == 0 (
   echo all check passed
@@ -116,13 +190,10 @@ rem END_exit_bat
 rem END_check
 
 :set_exit_code
-  if not %ERRORLEVEL% == 0 (
-    set exit_code=1
-    rem if %exit_on_error% == 1 (
-    rem   goto :exit_bat
-    rem )
-  ) else (
+  if %ERRORLEVEL% == 0 (
     echo pass
+  ) else (
+    set exit_code=1
   )
   goto :EOF
 rem END_set_exit_code
