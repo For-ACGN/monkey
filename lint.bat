@@ -1,15 +1,25 @@
 @echo off
 
 rem initialize environment variables
+set print_help=0
 set exit_code=0
 set exit_on_error=0
 
 rem print help information
 if "%1" == "-help" (
-  echo -golint
-  echo -gocyclo
-  echo -cilint
-  echo -gosec
+  set print_help=1
+)
+if "%1" == "--help" (
+  set print_help=1
+)
+if "%1" == "-h" (
+  set print_help=1
+)
+if "%1" == "/?" (
+  set print_help=1
+)
+if %print_help% == 1 (
+  call :print_help
   goto :EOF
 )
 
@@ -123,6 +133,20 @@ if %exit_code% == 0 (
 )
 exit /b %exit_code%
 rem END_exit_bat
+
+:print_help
+  echo Usage of lint:
+  echo   -golint      only use golint to check code
+  echo   -gocyclo     only use gocyclo to check code
+  echo   -cilint      only use golangci-lint to check code
+  echo   -gosec       only use gosec to check code
+  echo   -e           interrupt script when detect error
+  echo.
+  echo example:
+  echo   "lint -golint"    only use golint to check code
+  echo   "lint -gosec -e"  only use gosec and exit on error
+goto :EOF
+rem END_print_help
 
 :check
   echo ================================================
