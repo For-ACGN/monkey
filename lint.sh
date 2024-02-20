@@ -15,7 +15,7 @@ function main() {
     return 0
   fi
   # process arguments
-  if [ "$2" == "-e" ]; then
+  if [ "$1" == "-e" ] || [ "$2" == "-e" ]; then
     export exit_on_error=1
   fi
   # start check code
@@ -156,9 +156,14 @@ function check() {
 function set_exit_code() {
   if [ $? == 0 ]; then
     echo pass
+    return
   else
     export exit_code=1
   fi
+  if [ $exit_on_error != 1 ]; then
+    return
+  fi
+  exit $exit_code
 }
 
 function echo_line() {
