@@ -20,6 +20,9 @@ rem END_init
     goto :EOF
   )
   rem process arguments
+  if "%1" == "-e" (
+    set exit_on_error=1
+  )
   if "%2" == "-e" (
     set exit_on_error=1
   )
