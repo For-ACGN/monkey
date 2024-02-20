@@ -15,7 +15,7 @@ function main() {
     return 0
   fi
   # process arguments
-  if [ $2 == "-e" ]; then
+  if [ "$2" == "-e" ]; then
     export exit_on_error=1
   fi
   # start check code
@@ -30,15 +30,15 @@ function main() {
 }
 
 function is_print_help() {
-  if [ $1 == "-help" ]; then
+  if [ "$1" == "-help" ]; then
     export is_print_help=1
     return
   fi
-  if [ $1 == "--help" ]; then
+  if [ "$1" == "--help" ]; then
     export is_print_help=1
     return
   fi
-  if [ $1 == "-h" ]; then
+  if [ "$1" == "-h" ]; then
     export is_print_help=1
     return
   fi
@@ -91,26 +91,26 @@ function check() {
   echo check $GOOS $GOARCH
   echo ------------------------------------------------
 
-  case $1 in
-  -golint)
+  case "$1" in
+  "-golint")
     golint -set_exit_status -min_confidence 0.3 ./...
     set_exit_code
     echo_line
   ;;
 
-  -gocyclo)
+  "-gocyclo")
     gocyclo -avg -over 15 .
     set_exit_code
     echo_line
   ;;
 
-  -cilint)
+  "-cilint")
     golangci-lint run ./...
     set_exit_code
     echo_line
   ;;
 
-  -gosec)
+  "-gosec")
     gosec -quiet ./...
     set_exit_code
     echo_line
