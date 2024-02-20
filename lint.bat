@@ -200,6 +200,13 @@ rem END_check_all
   call :set_exit_code
   echo ------------------------------------------------
   echo.
+  rem --------exit on error--------
+  if not exit_code == 0 (
+    if %exit_on_error% == 1 (
+      goto :EOF
+    )
+  )
+  rem -----------------------------
 
   echo ------------------------------------------------
   echo gocyclo
@@ -208,6 +215,13 @@ rem END_check_all
   call :set_exit_code
   echo ------------------------------------------------
   echo.
+  rem --------exit on error--------
+  if not exit_code == 0 (
+    if %exit_on_error% == 1 (
+      goto :EOF
+    )
+  )
+  rem -----------------------------
 
   echo ------------------------------------------------
   echo golangci-lint
@@ -216,6 +230,13 @@ rem END_check_all
   call :set_exit_code
   echo ------------------------------------------------
   echo.
+  rem --------exit on error--------
+  if not exit_code == 0 (
+    if %exit_on_error% == 1 (
+      goto :EOF
+    )
+  )
+  rem -----------------------------
 
   echo ------------------------------------------------
   echo gosec
@@ -224,6 +245,13 @@ rem END_check_all
   call :set_exit_code
   echo ------------------------------------------------
   call :echo_line
+  rem --------exit on error--------
+  if not exit_code == 0 (
+    if %exit_on_error% == 1 (
+      goto :EOF
+    )
+  )
+  rem -----------------------------
 goto :EOF
 rem END_check
 
