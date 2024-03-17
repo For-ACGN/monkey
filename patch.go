@@ -18,8 +18,8 @@ type PatchGuard struct {
 
 func (pg *PatchGuard) patchFunc(target, patch reflect.Value) {
 	checkFuncType(target.Type(), patch.Type())
-	targetAddr := *(*uintptr)(getPointer(target))
-	patchAddr := uintptr(getPointer(patch))
+	targetAddr := *(*uintptr)(getFuncPointer(target))
+	patchAddr := uintptr(getFuncPointer(patch))
 	pg.applyPatch(targetAddr, patchAddr)
 }
 
@@ -49,15 +49,14 @@ func (pg *PatchGuard) patchPublicMethod(target reflect.Value, method string, pat
 		patch = reflect.MakeFunc(methodType, func(args []reflect.Value) []reflect.Value {
 			if rawPatch.Type().IsVariadic() {
 				return rawPatch.CallSlice(args[1:])
-			} else {
-				return rawPatch.Call(args[1:])
 			}
+			return rawPatch.Call(args[1:])
 		})
 		patchType = patch.Type()
 	}
 	checkFuncType(methodType, patchType)
-	targetAddr := *(*uintptr)(getPointer(m.Func))
-	patchAddr := uintptr(getPointer(patch))
+	targetAddr := *(*uintptr)(getFuncPointer(m.Func))
+	patchAddr := uintptr(getFuncPointer(patch))
 	pg.applyPatch(targetAddr, patchAddr)
 }
 
@@ -94,15 +93,14 @@ func (pg *PatchGuard) patchPrivateMethod(target reflect.Value, method string, pa
 		patch = reflect.MakeFunc(funcType, func(args []reflect.Value) []reflect.Value {
 			if rawPatch.Type().IsVariadic() {
 				return rawPatch.CallSlice(args[1:])
-			} else {
-				return rawPatch.Call(args[1:])
 			}
+			return rawPatch.Call(args[1:])
 		})
 		patchType = patch.Type()
 	}
 	// only check function NumIn, NumOut and IsVariadic.
 	targetAddr := m.Func
-	patchAddr := uintptr(getPointer(patch))
+	patchAddr := uintptr(getFuncPointer(patch))
 	pg.applyPatch(targetAddr, patchAddr)
 }
 
@@ -173,11 +171,11 @@ func readMemory(address uintptr, size int) []byte {
 	return b
 }
 
-type reflectValue struct {
+type funcValue struct {
 	_   uintptr
 	ptr unsafe.Pointer
 }
 
-func getPointer(v reflect.Value) unsafe.Pointer {
-	return (*reflectValue)(unsafe.Pointer(&v)).ptr // #nosec
+func getFuncPointer(v reflect.Value) unsafe.Pointer {
+	return (*funcValue)(unsafe.Pointer(&v)).ptr // #nosec
 }
