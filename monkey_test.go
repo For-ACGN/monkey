@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/For-ACGN/monkey/testdata"
+	"github.com/For-ACGN/monkey/testpkg"
 )
 
 func TestPatch(t *testing.T) {
@@ -39,7 +39,7 @@ func TestPatch(t *testing.T) {
 
 func TestPatchMethod_Public(t *testing.T) {
 	t.Run("common", func(t *testing.T) {
-		w := new(testdata.Writer)
+		w := new(testpkg.Writer)
 		n, err := w.Write([]byte("hello!"))
 		require.NoError(t, err)
 		require.Equal(t, 7, n)
@@ -47,7 +47,7 @@ func TestPatchMethod_Public(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 8, n)
 
-		patch := func(*testdata.Writer) (int, error) {
+		patch := func(*testpkg.Writer) (int, error) {
 			return fmt.Println("oh!")
 		}
 		pg := PatchMethod(w, "Print", patch)
@@ -69,12 +69,12 @@ func TestPatchMethod_Public(t *testing.T) {
 	})
 
 	t.Run("implement interface", func(t *testing.T) {
-		w := new(testdata.Writer)
+		w := new(testpkg.Writer)
 		n, err := w.Write([]byte("hello!"))
 		require.NoError(t, err)
 		require.Equal(t, 7, n)
 
-		patch := func(*testdata.Writer, []byte) (int, error) {
+		patch := func(*testpkg.Writer, []byte) (int, error) {
 			return 0, nil
 		}
 		pg := PatchMethod(w, "Write", patch)
@@ -96,7 +96,7 @@ func TestPatchMethod_Public(t *testing.T) {
 	})
 
 	t.Run("not pointer receiver", func(t *testing.T) {
-		w := testdata.Writer{}
+		w := testpkg.Writer{}
 		n, err := w.Write([]byte("hello!"))
 		require.NoError(t, err)
 		require.Equal(t, 7, n)
@@ -104,7 +104,7 @@ func TestPatchMethod_Public(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 7, n)
 
-		patch := func(testdata.Writer) (int, error) {
+		patch := func(testpkg.Writer) (int, error) {
 			return 0, nil
 		}
 		pg := PatchMethod(w, "Println", patch)
@@ -128,7 +128,7 @@ func TestPatchMethod_Public(t *testing.T) {
 
 func TestPatchMethod_Private(t *testing.T) {
 	t.Run("common", func(t *testing.T) {
-		w := new(testdata.Writer)
+		w := new(testpkg.Writer)
 		n, err := w.Write([]byte("hello!"))
 		require.NoError(t, err)
 		require.Equal(t, 7, n)
@@ -136,7 +136,7 @@ func TestPatchMethod_Private(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 8, n)
 
-		patch := func(*testdata.Writer) (int, error) {
+		patch := func(*testpkg.Writer) (int, error) {
 			return fmt.Println("oh!")
 		}
 		pg := PatchMethod(w, "print", patch)
@@ -158,7 +158,7 @@ func TestPatchMethod_Private(t *testing.T) {
 	})
 
 	t.Run("not pointer receiver", func(t *testing.T) {
-		w := testdata.Writer{}
+		w := testpkg.Writer{}
 		n, err := w.Write([]byte("hello!"))
 		require.NoError(t, err)
 		require.Equal(t, 7, n)
@@ -166,7 +166,7 @@ func TestPatchMethod_Private(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 7, n)
 
-		patch := func(testdata.Writer) (int, error) {
+		patch := func(testpkg.Writer) (int, error) {
 			return 0, nil
 		}
 		pg := PatchMethod(w, "println", patch)
