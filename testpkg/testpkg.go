@@ -4,21 +4,25 @@ import (
 	"fmt"
 )
 
+// Writer for test.
 type Writer struct {
 	data []byte
 }
 
+// implement io.Writer.
 func (w *Writer) Write(b []byte) (int, error) {
 	w.data = b
 	return w.print()
 }
 
+// Print padding comment.
 func (w *Writer) Print() (int, error) {
 	n, err := w.print()
 	fmt.Println()
 	return n + 1, err
 }
 
+// Println padding comment.
 func (w Writer) Println() (int, error) {
 	n, err := w.println()
 	fmt.Println()
