@@ -37,10 +37,10 @@ func (pg *PatchGuard) patchMethod(target reflect.Value, method string, patch ref
 func (pg *PatchGuard) patchPublicMethod(target reflect.Value, method string, patch reflect.Value) {
 	m, ok := target.Type().MethodByName(method)
 	if !ok {
-		panic(fmt.Sprintf("failed to get method by name: %s\n", method))
+		panic(fmt.Sprintf("failed to get public method by name: %s\n", method))
 	}
-	// process when receiver is ignored ot it is private structure
-	// check the type of first argument in patch is the receiver type
+	// process when receiver is ignored, or it is private structure.
+	// check the type of first argument in patch is the receiver type.
 	methodType := m.Type
 	patchType := patch.Type()
 	if methodType.NumIn() != patchType.NumIn() || patchType.In(0) != target.Type() {
@@ -61,20 +61,14 @@ func (pg *PatchGuard) patchPublicMethod(target reflect.Value, method string, pat
 }
 
 func (pg *PatchGuard) patchPrivateMethod(target reflect.Value, method string, patch reflect.Value) {
-	m, ok := creflect.MethodByName(target.Type(), method) // TODO num in
+	m, ok := creflect.MethodByName(target.Type(), method)
 	if !ok {
-		panic(fmt.Sprintf("failed to get method by name: %s\n", method))
+		panic(fmt.Sprintf("failed to get private method by name: %s\n", method))
 	}
-
-	fmt.Println(m)
-
-	// process when receiver is ignored ot it is private structure
-	// check the type of first argument in patch is the receiver type
+	// process when receiver is ignored, or it is private structure.
+	// check the type of first argument in patch is the receiver type.
 	patchType := patch.Type()
-
-	// TODO methodType.NumIn() != patchType.NumIn() ||
-
-	if patchType.In(0) != target.Type() {
+	if m.NumIn != patchType.NumIn() || patchType.In(0) != target.Type() {
 		// build new patch function type
 		numIn := patchType.NumIn()
 		in := make([]reflect.Type, numIn+1)
@@ -99,6 +93,7 @@ func (pg *PatchGuard) patchPrivateMethod(target reflect.Value, method string, pa
 		patchType = patch.Type()
 	}
 	// only check function NumIn, NumOut and IsVariadic.
+
 	targetAddr := m.Func
 	patchAddr := uintptr(getFuncPointer(patch))
 	pg.applyPatch(targetAddr, patchAddr)
@@ -120,9 +115,6 @@ func checkFuncType(target, patch reflect.Type) {
 		if targetIn == patchIn {
 			continue
 		}
-		// if targetIn.Size() == patchIn.Size() && targetIn.ConvertibleTo(patchIn) {
-		// 	continue
-		// }
 		const format = "target type(%s) and patch type(%s) are different"
 		panic(fmt.Sprintf(format, target, patch))
 	}
@@ -133,9 +125,6 @@ func checkFuncType(target, patch reflect.Type) {
 		if targetOut == patchOut {
 			continue
 		}
-		// if targetOut.Size() == patchOut.Size() && targetOut.ConvertibleTo(patchOut) {
-		// 	continue
-		// }
 		const format = "target type(%s) and patch type(%s) are different"
 		panic(fmt.Sprintf(format, target, patch))
 	}
