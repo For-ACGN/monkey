@@ -2,6 +2,7 @@ package monkey
 
 import (
 	"fmt"
+	"io"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -14,7 +15,7 @@ func TestPatch(t *testing.T) {
 	require.Equal(t, "hello!\n", output)
 
 	patch := func(a ...interface{}) string {
-		return fmt.Sprint("what!!!\n")
+		return "what!!!\n"
 	}
 	pg := Patch(fmt.Sprintln, patch)
 	defer pg.Unpatch()
@@ -68,8 +69,37 @@ func TestPatchMethod_Public(t *testing.T) {
 		require.Equal(t, 4, n)
 	})
 
+	t.Run("ignored receiver", func(t *testing.T) {
+		var w io.Writer
+		w = new(testpkg.Writer)
+		n, err := w.Write([]byte("hello!"))
+		require.NoError(t, err)
+		require.Equal(t, 7, n)
+
+		patch := func([]byte) (int, error) {
+			return 0, nil
+		}
+		pg := PatchMethod(w, "Write", patch)
+		defer pg.Unpatch()
+
+		n, err = w.Write([]byte("hello!"))
+		require.NoError(t, err)
+		require.Zero(t, n)
+
+		pg.Unpatch()
+		n, err = w.Write([]byte("hello!"))
+		require.NoError(t, err)
+		require.Equal(t, 7, n)
+
+		pg.Restore()
+		n, err = w.Write([]byte("hello!"))
+		require.NoError(t, err)
+		require.Zero(t, n)
+	})
+
 	t.Run("implement interface", func(t *testing.T) {
-		w := new(testpkg.Writer)
+		var w io.Writer
+		w = new(testpkg.Writer)
 		n, err := w.Write([]byte("hello!"))
 		require.NoError(t, err)
 		require.Equal(t, 7, n)
@@ -137,6 +167,36 @@ func TestPatchMethod_Private(t *testing.T) {
 		require.Equal(t, 8, n)
 
 		patch := func(*testpkg.Writer) (int, error) {
+			return fmt.Println("oh!")
+		}
+		pg := PatchMethod(w, "print", patch)
+		defer pg.Unpatch()
+
+		n, err = w.Print()
+		require.NoError(t, err)
+		require.Equal(t, 5, n)
+
+		pg.Unpatch()
+		n, err = w.Print()
+		require.NoError(t, err)
+		require.Equal(t, 8, n)
+
+		pg.Restore()
+		n, err = w.Print()
+		require.NoError(t, err)
+		require.Equal(t, 5, n)
+	})
+
+	t.Run("ignored receiver", func(t *testing.T) {
+		w := new(testpkg.Writer)
+		n, err := w.Write([]byte("hello!"))
+		require.NoError(t, err)
+		require.Equal(t, 7, n)
+		n, err = w.Print()
+		require.NoError(t, err)
+		require.Equal(t, 8, n)
+
+		patch := func() (int, error) {
 			return fmt.Println("oh!")
 		}
 		pg := PatchMethod(w, "print", patch)
