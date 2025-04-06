@@ -12,10 +12,18 @@ type name struct {
 	bytes *byte
 }
 
-func (n name) data(off int) *byte {
-	return (*byte)(add(unsafe.Pointer(n.bytes), uintptr(off))) // #nosec
+func (n name) name() (s string) {
+	if n.bytes == nil {
+		return
+	}
+	i, l := n.readVarInt(1)
+	hdr := (*stringHeader)(unsafe.Pointer(&s)) // #nosec
+	hdr.data = unsafe.Pointer(n.data(1 + i))   // #nosec // "non-empty string"
+	hdr.len = l
+	return
 }
 
+// #nosec
 func (n name) readVarInt(off int) (int, int) {
 	v := 0
 	for i := 0; ; i++ {
@@ -27,13 +35,6 @@ func (n name) readVarInt(off int) (int, int) {
 	}
 }
 
-func (n name) name() (s string) {
-	if n.bytes == nil {
-		return
-	}
-	i, l := n.readVarInt(1)
-	hdr := (*stringHeader)(unsafe.Pointer(&s)) // #nosec
-	hdr.data = unsafe.Pointer(n.data(1 + i))   // #nosec // "non-empty string"
-	hdr.len = l
-	return
+func (n name) data(off int) *byte {
+	return (*byte)(add(unsafe.Pointer(n.bytes), uintptr(off))) // #nosec
 }
