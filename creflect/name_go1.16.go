@@ -12,13 +12,14 @@ type name struct {
 	bytes *byte
 }
 
+// #nosec
 func (n name) name() (s string) {
 	if n.bytes == nil {
 		return
 	}
-	b := (*[4]byte)(unsafe.Pointer(n.bytes))   // #nosec
-	hdr := (*stringHeader)(unsafe.Pointer(&s)) // #nosec
-	hdr.data = unsafe.Pointer(&b[3])           // #nosec
+	b := (*[4]byte)(unsafe.Pointer(n.bytes))
+	hdr := (*stringHeader)(unsafe.Pointer(&s))
+	hdr.data = unsafe.Pointer(&b[3])
 	hdr.len = int(b[1])<<8 | int(b[2])
 	return s
 }

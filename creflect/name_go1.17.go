@@ -12,13 +12,14 @@ type name struct {
 	bytes *byte
 }
 
+// #nosec
 func (n name) name() (s string) {
 	if n.bytes == nil {
 		return
 	}
 	i, l := n.readVarInt(1)
-	hdr := (*stringHeader)(unsafe.Pointer(&s)) // #nosec
-	hdr.data = unsafe.Pointer(n.data(1 + i))   // #nosec // "non-empty string"
+	hdr := (*stringHeader)(unsafe.Pointer(&s))
+	hdr.data = unsafe.Pointer(n.data(1 + i)) // "non-empty string"
 	hdr.len = l
 	return
 }
