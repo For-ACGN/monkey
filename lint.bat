@@ -79,6 +79,7 @@ rem END_print_help
       goto :EOF
     )
   )
+
   rem -----------------------------
   set GOARCH=386
   call :check %1
@@ -88,6 +89,7 @@ rem END_print_help
       goto :EOF
     )
   )
+
   rem -----------------------------
   set GOARCH=arm64
   call :check %1
@@ -110,6 +112,7 @@ rem END_print_help
       goto :EOF
     )
   )
+
   rem -----------------------------
   set GOARCH=386
   call :check %1
@@ -119,6 +122,7 @@ rem END_print_help
       goto :EOF
     )
   )
+
   rem -----------------------------
   set GOARCH=arm64
   call :check %1
@@ -128,8 +132,19 @@ rem END_print_help
       goto :EOF
     )
   )
+
   rem -----------------------------
   set GOARCH=loong64
+  call :check %1
+  rem --------exit on error--------
+  if not exit_code == 0 (
+    if %exit_on_error% == 1 (
+      goto :EOF
+    )
+  )
+
+  rem -----------------------------
+  set GOARCH=riscv64
   call :check %1
   rem --------exit on error--------
   if not exit_code == 0 (
@@ -150,6 +165,7 @@ rem END_print_help
       goto :EOF
     )
   )
+
   rem -----------------------------
   set GOARCH=arm64
   call :check %1
