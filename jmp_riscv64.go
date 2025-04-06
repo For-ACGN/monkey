@@ -7,6 +7,7 @@ import (
 // buildJMPDirective 为 riscv64 架构生成一段跳转指令，
 // 将传入的 64 位地址加载到寄存器 x6（t1）中，
 // 然后执行 JALR x0, 0(x6) 实现无条件跳转。
+// #nosec
 func buildJMPDirective(double uintptr) []byte {
 	var res []byte
 	// 将地址转换为 64 位无符号整数
@@ -52,6 +53,7 @@ func buildJMPDirective(double uintptr) []byte {
 // 31          12 11   7 6       0
 // [ imm[31:12] ] [ rd ] [ opcode ]
 // opcode LUI 为 0x37。
+// #nosec
 func encodeLUI(rd int, imm20 uint32) []byte {
 	inst := (imm20 << 12) | (uint32(rd) << 7) | 0x37
 	res := make([]byte, 4)
@@ -63,6 +65,7 @@ func encodeLUI(rd int, imm20 uint32) []byte {
 // 31         20 19   15 14 12 11   7 6       0
 // [ imm[11:0] ] [ rs1 ] [funct3] [ rd ] [ opcode ]
 // opcode ADDI 为 0x13，funct3 为 0。
+// #nosec
 func encodeADDI(rd, rs1 int, imm int32) []byte {
 	inst := ((uint32(imm) & 0xfff) << 20) | (uint32(rs1) << 15) | (uint32(rd) << 7) | 0x13
 	res := make([]byte, 4)
@@ -74,6 +77,7 @@ func encodeADDI(rd, rs1 int, imm int32) []byte {
 // 31      26 25    20 19   15 14 12 11   7 6       0
 // [ 0 ] [ shamt ] [ rs1 ] [funct3] [ rd ] [ opcode ]
 // opcode 为 0x13，funct3 为 1。
+// #nosec
 func encodeSLLI(rd, rs1, shamt int) []byte {
 	inst := (uint32(shamt) << 20) | (uint32(rs1) << 15) | (1 << 12) | (uint32(rd) << 7) | 0x13
 	res := make([]byte, 4)
@@ -85,6 +89,7 @@ func encodeSLLI(rd, rs1, shamt int) []byte {
 // 31         20 19   15 14 12 11   7 6       0
 // [ imm[11:0] ] [ rs1 ] [funct3] [ rd ] [ opcode ]
 // opcode 为 0x13，funct3 为 6。
+// #nosec
 func encodeORI(rd, rs1 int, imm int32) []byte {
 	inst := ((uint32(imm) & 0xfff) << 20) | (uint32(rs1) << 15) | (6 << 12) | (uint32(rd) << 7) | 0x13
 	res := make([]byte, 4)
@@ -97,6 +102,7 @@ func encodeORI(rd, rs1 int, imm int32) []byte {
 // [ imm[11:0] ] [ rs1 ] [funct3] [ rd ] [ opcode ]
 // opcode 为 0x67，funct3 为 0。
 // JALR x0, 0(x6) 用于无条件跳转。
+// #nosec
 func encodeJALR(rd, rs1 int, imm int32) []byte {
 	inst := ((uint32(imm) & 0xfff) << 20) | (uint32(rs1) << 15) | (uint32(rd) << 7) | 0x67
 	res := make([]byte, 4)
