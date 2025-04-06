@@ -9,7 +9,7 @@ function init() {
 
 function main() {
   # process print help information
-  is_print_help $1
+  is_print_help "$1"
   if [ $is_print_help == 1 ]; then
     print_help
     return 0
@@ -19,7 +19,7 @@ function main() {
     export exit_on_error=1
   fi
   # start check code
-  check_all $1
+  check_all "$1"
   # check exit code
   if [ $exit_code == 0 ]; then
     echo all check passed
@@ -61,29 +61,31 @@ function check_all() {
   # linux
   export GOOS=linux
   export GOARCH=amd64
-  check $1
+  check "$1"
   export GOARCH=386
-  check $1
+  check "$1"
   export GOARCH=arm64
-  check $1
+  check "$1"
   export GOARCH=loong64
-  check $1
+  check "$1"
+  export GOARCH=riscv64
+  check "$1"
 
   # windows
   export GOOS=windows
   export GOARCH=amd64
-  check $1
+  check "$1"
   export GOARCH=386
-  check $1
+  check "$1"
   export GOARCH=arm64
-  check $1
+  check "$1"
 
   # darwin
   export GOOS=darwin
   export GOARCH=amd64
-  check $1
+  check "$1"
   export GOARCH=arm64
-  check $1
+  check "$1"
 }
 
 function check() {
@@ -172,4 +174,4 @@ function echo_line() {
 }
 
 init
-main $1 $2
+main "$1" "$2"
