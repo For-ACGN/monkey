@@ -17,6 +17,7 @@ func buildJMPDirective(addr uintptr) []byte {
 	return jmp
 }
 
+// #nosec
 func movImm(opc, shift int, val uintptr) []byte {
 	var m uint32 = 26           // rd
 	m |= uint32(val) << 5       // imm16
