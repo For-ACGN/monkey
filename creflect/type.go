@@ -22,6 +22,8 @@ func funcPointer(v reflect.Method) uintptr {
 
 // rtype is the common implementation of most values.
 // rtype must be kept in sync with ../runtime/type.go:/^type._type.
+//
+//nolint:unused
 type rtype struct {
 	size       uintptr
 	ptrdata    uintptr // number of bytes in the type that can contain pointers
@@ -169,6 +171,7 @@ type interfaceType struct {
 	methods []imethod // sorted by hash
 }
 
+//nolint:unused
 type imethod struct {
 	name nameOff // name of method
 	typ  typeOff // .(*FuncType) underneath
@@ -189,31 +192,37 @@ func (t *rtype) uncommon(r reflect.Type) *uncommonType {
 			ptrType
 			u uncommonType
 		}
-		return &(*u)(unsafe.Pointer(t)).u // #nosec
+		p := (*u)(unsafe.Pointer(t)) // #nosec
+		return &p.u
 	case reflect.Func:
 		type u struct {
 			funcType
 			u uncommonType
 		}
-		return &(*u)(unsafe.Pointer(t)).u // #nosec
+		p := (*u)(unsafe.Pointer(t)) // #nosec
+		return &p.u
 	case reflect.Interface:
 		type u struct {
 			interfaceType
 			u uncommonType
 		}
-		return &(*u)(unsafe.Pointer(t)).u // #nosec
+		p := (*u)(unsafe.Pointer(t)) // #nosec
+		return &p.u
 	case reflect.Struct:
 		type u struct {
 			interfaceType
 			u uncommonType
 		}
-		return &(*u)(unsafe.Pointer(t)).u // #nosec
+		p := (*u)(unsafe.Pointer(t)) // #nosec
+		return &p.u
 	default:
 		return nil
 	}
 }
 
 // Method on non-interface type
+//
+//nolint:unused
 type method struct {
 	name nameOff // name of method
 	mtyp typeOff // method type (without receiver)
