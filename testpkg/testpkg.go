@@ -43,7 +43,7 @@ type writer struct {
 	data []byte
 }
 
-// NewWriter is used to create a private writer.
+// NewWriter is used to create an unexported writer.
 func NewWriter() io.Writer {
 	return new(writer)
 }
