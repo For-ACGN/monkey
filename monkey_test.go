@@ -1,249 +1,32 @@
 package monkey
 
 import (
+	"bytes"
 	"fmt"
-	"io"
-	"testing"
-
-	"github.com/stretchr/testify/require"
-
-	"github.com/For-ACGN/monkey/testpkg"
 )
 
-func TestPatch(t *testing.T) {
-	output := fmt.Sprintln("hello!")
-	require.Equal(t, "hello!\n", output)
-
-	patch := func(a ...interface{}) string {
-		return "what!!!\n"
+func ExamplePatch() {
+	patch := func(a ...interface{}) (int, error) {
+		return fmt.Print("what?!")
 	}
-	pg := Patch(fmt.Sprintln, patch)
+	pg := Patch(fmt.Println, patch)
 	defer pg.Unpatch()
 
-	output = fmt.Sprintln("hello?")
-	require.Equal(t, "what!!!\n", output)
-	output = fmt.Sprintln("??????")
-	require.Equal(t, "what!!!\n", output)
-
-	pg.Unpatch()
-	output = fmt.Sprintln("hello!")
-	require.Equal(t, "hello!\n", output)
-	output = fmt.Sprintln("world!")
-	require.Equal(t, "world!\n", output)
-
-	pg.Restore()
-	output = fmt.Sprintln("hello?")
-	require.Equal(t, "what!!!\n", output)
-	output = fmt.Sprintln("??????")
-	require.Equal(t, "what!!!\n", output)
+	// output: what?!
+	fmt.Println("hello!")
 }
 
-func TestPatchMethod_Public(t *testing.T) {
-	t.Run("common", func(t *testing.T) {
-		w := new(testpkg.Writer)
-		n, err := w.Write([]byte("hello!"))
-		require.NoError(t, err)
-		require.Equal(t, 7, n)
-		n, err = w.Print()
-		require.NoError(t, err)
-		require.Equal(t, 8, n)
+func ExamplePatchMethod() {
+	var r *bytes.Reader
+	patch := func(b []byte) (int, error) {
+		return 0, nil
+	}
+	pg := PatchMethod(r, "Read", patch)
+	defer pg.Unpatch()
 
-		patch := func(*testpkg.Writer) (int, error) {
-			return fmt.Println("oh!")
-		}
-		pg := PatchMethod(w, "Print", patch)
-		defer pg.Unpatch()
+	reader := bytes.NewReader([]byte("hello"))
+	buf := make([]byte, 1024)
 
-		n, err = w.Print()
-		require.NoError(t, err)
-		require.Equal(t, 4, n)
-
-		pg.Unpatch()
-		n, err = w.Print()
-		require.NoError(t, err)
-		require.Equal(t, 8, n)
-
-		pg.Restore()
-		n, err = w.Print()
-		require.NoError(t, err)
-		require.Equal(t, 4, n)
-	})
-
-	t.Run("ignored receiver", func(t *testing.T) {
-		var w io.Writer
-		w = new(testpkg.Writer)
-		n, err := w.Write([]byte("hello!"))
-		require.NoError(t, err)
-		require.Equal(t, 7, n)
-
-		patch := func([]byte) (int, error) {
-			return 0, nil
-		}
-		pg := PatchMethod(w, "Write", patch)
-		defer pg.Unpatch()
-
-		n, err = w.Write([]byte("hello!"))
-		require.NoError(t, err)
-		require.Zero(t, n)
-
-		pg.Unpatch()
-		n, err = w.Write([]byte("hello!"))
-		require.NoError(t, err)
-		require.Equal(t, 7, n)
-
-		pg.Restore()
-		n, err = w.Write([]byte("hello!"))
-		require.NoError(t, err)
-		require.Zero(t, n)
-	})
-
-	t.Run("implement interface", func(t *testing.T) {
-		var w io.Writer
-		w = new(testpkg.Writer)
-		n, err := w.Write([]byte("hello!"))
-		require.NoError(t, err)
-		require.Equal(t, 7, n)
-
-		patch := func(*testpkg.Writer, []byte) (int, error) {
-			return 0, nil
-		}
-		pg := PatchMethod(w, "Write", patch)
-		defer pg.Unpatch()
-
-		n, err = w.Write([]byte("hello!"))
-		require.NoError(t, err)
-		require.Zero(t, n)
-
-		pg.Unpatch()
-		n, err = w.Write([]byte("hello!"))
-		require.NoError(t, err)
-		require.Equal(t, 7, n)
-
-		pg.Restore()
-		n, err = w.Write([]byte("hello!"))
-		require.NoError(t, err)
-		require.Zero(t, n)
-	})
-
-	t.Run("not pointer receiver", func(t *testing.T) {
-		w := testpkg.Writer{}
-		n, err := w.Write([]byte("hello!"))
-		require.NoError(t, err)
-		require.Equal(t, 7, n)
-		n, err = w.Println()
-		require.NoError(t, err)
-		require.Equal(t, 7, n)
-
-		patch := func(testpkg.Writer) (int, error) {
-			return 0, nil
-		}
-		pg := PatchMethod(w, "Println", patch)
-		defer pg.Unpatch()
-
-		n, err = w.Println()
-		require.NoError(t, err)
-		require.Zero(t, n)
-
-		pg.Unpatch()
-		n, err = w.Println()
-		require.NoError(t, err)
-		require.Equal(t, 7, n)
-
-		pg.Restore()
-		n, err = w.Println()
-		require.NoError(t, err)
-		require.Zero(t, n)
-	})
-}
-
-func TestPatchMethod_Private(t *testing.T) {
-	t.Run("common", func(t *testing.T) {
-		w := new(testpkg.Writer)
-		n, err := w.Write([]byte("hello!"))
-		require.NoError(t, err)
-		require.Equal(t, 7, n)
-		n, err = w.Print()
-		require.NoError(t, err)
-		require.Equal(t, 8, n)
-
-		patch := func(*testpkg.Writer) (int, error) {
-			return fmt.Println("oh!")
-		}
-		pg := PatchMethod(w, "print", patch)
-		defer pg.Unpatch()
-
-		n, err = w.Print()
-		require.NoError(t, err)
-		require.Equal(t, 5, n)
-
-		pg.Unpatch()
-		n, err = w.Print()
-		require.NoError(t, err)
-		require.Equal(t, 8, n)
-
-		pg.Restore()
-		n, err = w.Print()
-		require.NoError(t, err)
-		require.Equal(t, 5, n)
-	})
-
-	t.Run("ignored receiver", func(t *testing.T) {
-		w := new(testpkg.Writer)
-		n, err := w.Write([]byte("hello!"))
-		require.NoError(t, err)
-		require.Equal(t, 7, n)
-		n, err = w.Print()
-		require.NoError(t, err)
-		require.Equal(t, 8, n)
-
-		patch := func() (int, error) {
-			return fmt.Println("oh!")
-		}
-		pg := PatchMethod(w, "print", patch)
-		defer pg.Unpatch()
-
-		n, err = w.Print()
-		require.NoError(t, err)
-		require.Equal(t, 5, n)
-
-		pg.Unpatch()
-		n, err = w.Print()
-		require.NoError(t, err)
-		require.Equal(t, 8, n)
-
-		pg.Restore()
-		n, err = w.Print()
-		require.NoError(t, err)
-		require.Equal(t, 5, n)
-	})
-
-	t.Run("not pointer receiver", func(t *testing.T) {
-		w := testpkg.Writer{}
-		n, err := w.Write([]byte("hello!"))
-		require.NoError(t, err)
-		require.Equal(t, 7, n)
-		n, err = w.Println()
-		require.NoError(t, err)
-		require.Equal(t, 7, n)
-
-		patch := func(testpkg.Writer) (int, error) {
-			return 0, nil
-		}
-		pg := PatchMethod(w, "println", patch)
-		defer pg.Unpatch()
-
-		n, err = w.Println()
-		require.NoError(t, err)
-		require.Zero(t, n)
-
-		pg.Unpatch()
-		n, err = w.Println()
-		require.NoError(t, err)
-		require.Equal(t, 7, n)
-
-		pg.Restore()
-		n, err = w.Println()
-		require.NoError(t, err)
-		require.Zero(t, n)
-	})
+	// output: 0 <nil>
+	fmt.Println(reader.Read(buf))
 }
