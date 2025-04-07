@@ -23,22 +23,24 @@ func Patch(target, patch interface{}) *PatchGuard {
 // methods and private structure public and private methods, usually
 // the private structure is from interface.
 func PatchMethod(target interface{}, method string, patch interface{}) *PatchGuard {
-	t := reflect.ValueOf(target)
-	p := reflect.ValueOf(patch)
-	switch k := t.Kind(); k {
+	tType := reflect.TypeOf(target)
+	pType := reflect.TypeOf(patch)
+	switch k := tType.Kind(); k {
 	case reflect.Struct:
 	case reflect.Pointer:
-		if t.Elem().Kind() == reflect.Struct {
+		if tType.Elem().Kind() == reflect.Struct {
 			break
 		}
 		fallthrough
 	default:
 		panic("target is not a structure or pointer")
 	}
-	if p.Kind() != reflect.Func {
+	if pType.Kind() != reflect.Func {
 		panic("patch is not a function")
 	}
+	tValue := reflect.ValueOf(target)
+	pValue := reflect.ValueOf(patch)
 	pg := new(PatchGuard)
-	pg.patchMethod(t, method, p)
+	pg.patchMethod(tValue, method, pValue)
 	return pg
 }
