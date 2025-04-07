@@ -245,3 +245,39 @@ func TestPatchMethod_Private(t *testing.T) {
 		require.Zero(t, n)
 	})
 }
+
+func TestPatchMethod_Interface(t *testing.T) {
+	w := testpkg.NewWriter()
+
+	t.Run("public method", func(t *testing.T) {
+		n, err := w.Write([]byte("hello!"))
+		require.NoError(t, err)
+		require.Equal(t, 7, n)
+
+		patch := func([]byte) (int, error) {
+			return 0, nil
+		}
+		pg := PatchMethod(w, "Write", patch)
+		defer pg.Unpatch()
+
+		n, err = w.Write([]byte("hello!"))
+		require.NoError(t, err)
+		require.Zero(t, n)
+	})
+
+	t.Run("private method", func(t *testing.T) {
+		n, err := w.Write([]byte("hello!"))
+		require.NoError(t, err)
+		require.Equal(t, 7, n)
+
+		patch := func() (int, error) {
+			return fmt.Println("oh!")
+		}
+		pg := PatchMethod(w, "print", patch)
+		defer pg.Unpatch()
+
+		n, err = w.Write([]byte("hello!"))
+		require.NoError(t, err)
+		require.Equal(t, 4, n)
+	})
+}
