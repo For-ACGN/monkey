@@ -5,45 +5,12 @@ import (
 	"unsafe"
 )
 
-type tflag uint8
-type nameOff int32 // offset to a name
-type typeOff int32 // offset to an *rtype
-type textOff int32 // offset from top of text section
-
-type funcValue struct {
-	_   uintptr
-	ptr unsafe.Pointer
-}
-
-func funcPointer(v reflect.Method) uintptr {
-	p := (*funcValue)(unsafe.Pointer(&v.Func)).ptr // #nosec
-	return *(*uintptr)(p)
-}
-
-// rtype is the common implementation of most values.
-// rtype must be kept in sync with ../runtime/type.go:/^type._type.
-//
-//nolint:unused
-type rtype struct {
-	size       uintptr
-	ptrdata    uintptr // number of bytes in the type that can contain pointers
-	hash       uint32  // hash of type; avoids computation in hash tables
-	tflag      tflag   // extra type information flags
-	align      uint8   // alignment of variable with this type
-	fieldAlign uint8   // alignment of struct field with this type
-	kind       uint8   // enumeration for C
-	// function for comparing objects of this type
-	// (ptr to object A, ptr to object B) -> ==?
-	equal     func(unsafe.Pointer, unsafe.Pointer) bool
-	gcdata    *byte   // garbage collection data
-	str       nameOff // string form
-	ptrToThis typeOff // type for pointer to this type, may be zero
-}
-
-func newType(t reflect.Type) *rtype {
-	i := *(*funcValue)(unsafe.Pointer(&t)) // #nosec
-	r := (*rtype)(i.ptr)
-	return r
+// Method contains part information about Method Type.
+type Method struct {
+	Func       uintptr
+	NumIn      int
+	NumOut     int
+	IsVariadic bool
 }
 
 // MethodByName returns the method with that name in the type's
@@ -81,26 +48,48 @@ func MethodByName(r reflect.Type, name string) (*Method, bool) {
 	return nil, false
 }
 
+type tflag uint8
+type nameOff int32 // offset to a name
+type typeOff int32 // offset to an *rtype
+type textOff int32 // offset from top of text section
+
+// rtype is the common implementation of most values.
+// rtype must be kept in sync with ../runtime/type.go:/^type._type.
+//
+//nolint:unused
+type rtype struct {
+	size       uintptr
+	ptrdata    uintptr // number of bytes in the type that can contain pointers
+	hash       uint32  // hash of type; avoids computation in hash tables
+	tflag      tflag   // extra type information flags
+	align      uint8   // alignment of variable with this type
+	fieldAlign uint8   // alignment of struct field with this type
+	kind       uint8   // enumeration for C
+	// function for comparing objects of this type
+	// (ptr to object A, ptr to object B) -> ==?
+	equal     func(unsafe.Pointer, unsafe.Pointer) bool
+	gcdata    *byte   // garbage collection data
+	str       nameOff // string form
+	ptrToThis typeOff // type for pointer to this type, may be zero
+}
+
+func newType(t reflect.Type) *rtype {
+	i := *(*funcValue)(unsafe.Pointer(&t)) // #nosec
+	r := (*rtype)(i.ptr)
+	return r
+}
+
 func (t *rtype) Method(p method) *Method {
-	mtyp := t.typeOff(p.mtyp)
-	ft := *(*funcType)(mtyp)
+	mTyp := t.typeOff(p.mtyp)
+	ft := *(*funcType)(mTyp)
 	tfn := t.textOff(p.tfn)
 	return &Method{
-		Func:       *(*uintptr)(unsafe.Pointer(&tfn)), // #nosec,
+		Func:       *(*uintptr)(unsafe.Pointer(&tfn)), // #nosec
 		NumIn:      1 + ft.NumIn(),                    // the first is receiver
 		NumOut:     ft.NumOut(),
 		IsVariadic: ft.IsVariadic(),
 	}
 }
-
-//go:linkname resolveNameOff reflect.resolveNameOff
-func resolveNameOff(ptrInModule unsafe.Pointer, off int32) unsafe.Pointer
-
-//go:linkname resolveTypeOff reflect.resolveTypeOff
-func resolveTypeOff(rtype unsafe.Pointer, off int32) unsafe.Pointer
-
-//go:linkname resolveTextOff reflect.resolveTextOff
-func resolveTextOff(rtype unsafe.Pointer, off int32) unsafe.Pointer
 
 func (t *rtype) nameOff(off nameOff) name {
 	return name{(*byte)(resolveNameOff(unsafe.Pointer(t), int32(off)))} // #nosec
@@ -114,13 +103,14 @@ func (t *rtype) textOff(off textOff) unsafe.Pointer {
 	return resolveTextOff(unsafe.Pointer(t), int32(off)) // #nosec
 }
 
-// Method contains part information about Method Type.
-type Method struct {
-	Func       uintptr
-	NumIn      int
-	NumOut     int
-	IsVariadic bool
-}
+//go:linkname resolveNameOff reflect.resolveNameOff
+func resolveNameOff(ptrInModule unsafe.Pointer, off int32) unsafe.Pointer
+
+//go:linkname resolveTypeOff reflect.resolveTypeOff
+func resolveTypeOff(rtype unsafe.Pointer, off int32) unsafe.Pointer
+
+//go:linkname resolveTextOff reflect.resolveTextOff
+func resolveTextOff(rtype unsafe.Pointer, off int32) unsafe.Pointer
 
 const (
 	tflagUncommon tflag = 1 << 0
@@ -235,4 +225,14 @@ func (t *uncommonType) methods() []method {
 		return nil
 	}
 	return (*[1 << 16]method)(add(unsafe.Pointer(t), uintptr(t.moff)))[:t.mcount:t.mcount] // #nosec
+}
+
+type funcValue struct {
+	_   uintptr
+	ptr unsafe.Pointer
+}
+
+func funcPointer(v reflect.Method) uintptr {
+	p := (*funcValue)(unsafe.Pointer(&v.Func)).ptr // #nosec
+	return *(*uintptr)(p)
 }
