@@ -2,6 +2,7 @@ package testpkg
 
 import (
 	"fmt"
+	"io"
 )
 
 // Writer for test.
@@ -35,4 +36,24 @@ func (w *Writer) print() (int, error) {
 
 func (w Writer) println() (int, error) {
 	return fmt.Println(string(w.data))
+}
+
+// writer for test.
+type writer struct {
+	data []byte
+}
+
+// NewWriter is used to create a private writer.
+func NewWriter() io.Writer {
+	return new(writer)
+}
+
+// implement io.Writer.
+func (w *writer) Write(b []byte) (int, error) {
+	w.data = b
+	return w.print()
+}
+
+func (w *writer) print() (int, error) {
+	return fmt.Print(string(w.data) + "\n")
 }
