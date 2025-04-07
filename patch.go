@@ -28,18 +28,18 @@ func (pg *PatchGuard) patchMethod(target reflect.Value, method string, patch ref
 		panic("empty method name")
 	}
 	if unicode.IsUpper([]rune(method)[0]) {
-		pg.patchPublicMethod(target, method, patch)
+		pg.patchExportedMethod(target, method, patch)
 	} else {
-		pg.patchPrivateMethod(target, method, patch)
+		pg.patchUnexportedMethod(target, method, patch)
 	}
 }
 
-func (pg *PatchGuard) patchPublicMethod(target reflect.Value, method string, patch reflect.Value) {
+func (pg *PatchGuard) patchExportedMethod(target reflect.Value, method string, patch reflect.Value) {
 	m, ok := target.Type().MethodByName(method)
 	if !ok {
-		panic(fmt.Sprintf("failed to get public method by name: %s\n", method))
+		panic(fmt.Sprintf("failed to get method by name: %s\n", method))
 	}
-	// process when receiver is ignored, or it is private structure.
+	// process when receiver is ignored, or it is unexported structure.
 	// check the type of first argument in patch is the receiver type.
 	methodType := m.Type
 	patchType := patch.Type()
@@ -60,12 +60,12 @@ func (pg *PatchGuard) patchPublicMethod(target reflect.Value, method string, pat
 	pg.applyPatch(targetAddr, patchAddr)
 }
 
-func (pg *PatchGuard) patchPrivateMethod(target reflect.Value, method string, patch reflect.Value) {
+func (pg *PatchGuard) patchUnexportedMethod(target reflect.Value, method string, patch reflect.Value) {
 	m, ok := creflect.MethodByName(target.Type(), method)
 	if !ok {
-		panic(fmt.Sprintf("failed to get private method by name: %s\n", method))
+		panic(fmt.Sprintf("failed to get method by name: %s\n", method))
 	}
-	// process when receiver is ignored, or it is private structure.
+	// process when receiver is ignored, or it is unexported structure.
 	// check the type of first argument in patch is the receiver type.
 	patchType := patch.Type()
 	if m.NumIn != patchType.NumIn() || patchType.In(0) != target.Type() {

@@ -19,9 +19,9 @@ func Patch(target, patch interface{}) *PatchGuard {
 	return pg
 }
 
-// PatchMethod is used to patch structure methods, it supports private
-// methods and private structure public and private methods, usually
-// the private structure is from interface.
+// PatchMethod is used to patch structure methods, it supports unexported
+// methods and unexported structure exported and unexported methods, usually
+// the unexported structure is from interface.
 func PatchMethod(target interface{}, method string, patch interface{}) *PatchGuard {
 	tType := reflect.TypeOf(target)
 	pType := reflect.TypeOf(patch)

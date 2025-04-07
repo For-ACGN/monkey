@@ -38,7 +38,7 @@ func TestPatchFunc(t *testing.T) {
 	require.Equal(t, "what!!!\n", output)
 }
 
-func TestPatchMethod_Public(t *testing.T) {
+func TestPatchMethod_Exported(t *testing.T) {
 	t.Run("common", func(t *testing.T) {
 		w := new(testpkg.Writer)
 		n, err := w.Write([]byte("hello!"))
@@ -154,7 +154,7 @@ func TestPatchMethod_Public(t *testing.T) {
 	})
 }
 
-func TestPatchMethod_Private(t *testing.T) {
+func TestPatchMethod_Unexported(t *testing.T) {
 	t.Run("common", func(t *testing.T) {
 		w := new(testpkg.Writer)
 		n, err := w.Write([]byte("hello!"))
@@ -249,7 +249,7 @@ func TestPatchMethod_Private(t *testing.T) {
 func TestPatchMethod_Interface(t *testing.T) {
 	w := testpkg.NewWriter()
 
-	t.Run("public method", func(t *testing.T) {
+	t.Run("exported method", func(t *testing.T) {
 		n, err := w.Write([]byte("hello!"))
 		require.NoError(t, err)
 		require.Equal(t, 7, n)
@@ -265,7 +265,7 @@ func TestPatchMethod_Interface(t *testing.T) {
 		require.Zero(t, n)
 	})
 
-	t.Run("private method", func(t *testing.T) {
+	t.Run("unexported method", func(t *testing.T) {
 		n, err := w.Write([]byte("hello!"))
 		require.NoError(t, err)
 		require.Equal(t, 7, n)
