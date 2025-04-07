@@ -81,9 +81,9 @@ func (pg *PatchGuard) patchPrivateMethod(target reflect.Value, method string, pa
 		for i := 0; i < numOut; i++ {
 			out[i] = patchType.Out(i)
 		}
-		funcType := reflect.FuncOf(in, out, patchType.IsVariadic())
 		// create new patch function
 		rawPatch := patch
+		funcType := reflect.FuncOf(in, out, patchType.IsVariadic())
 		patch = reflect.MakeFunc(funcType, func(args []reflect.Value) []reflect.Value {
 			if rawPatch.Type().IsVariadic() {
 				return rawPatch.CallSlice(args[1:])
@@ -93,7 +93,13 @@ func (pg *PatchGuard) patchPrivateMethod(target reflect.Value, method string, pa
 		patchType = patch.Type()
 	}
 	// only check function NumIn, NumOut and IsVariadic.
-
+	invalidIn := m.NumIn != patchType.NumIn()
+	invalidOut := m.NumOut != patchType.NumOut()
+	invalidVar := m.IsVariadic != patchType.IsVariadic()
+	if invalidIn || invalidOut || invalidVar {
+		const format = "target type(%s) and patch type(%s) are different"
+		panic(fmt.Sprintf(format, target, patch))
+	}
 	targetAddr := m.Func
 	patchAddr := uintptr(getFuncPointer(patch))
 	pg.applyPatch(targetAddr, patchAddr)
