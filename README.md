@@ -22,7 +22,7 @@ var r *bytes.Reader
 patch := func(*bytes.Reader, b []byte) (int, error) {
     return 0, nil
 }
-pg := PatchMethod(r, "Read", patch)
+pg := monkey.PatchMethod(r, "Read", patch)
 defer pg.Unpatch()
 
 reader := bytes.NewReader([]byte("hello"))
@@ -37,7 +37,7 @@ var r *bytes.Reader
 patch := func(b []byte) (int, error) {
     return 0, nil
 }
-pg := PatchMethod(r, "Read", patch)
+pg := monkey.PatchMethod(r, "Read", patch)
 defer pg.Unpatch()
 
 reader := bytes.NewReader([]byte("hello"))
