@@ -27,7 +27,7 @@ func PatchMethod(target interface{}, method string, patch interface{}) *PatchGua
 	pType := reflect.TypeOf(patch)
 	switch k := tType.Kind(); k {
 	case reflect.Struct:
-	case reflect.Pointer:
+	case reflect.Ptr:
 		if tType.Elem().Kind() == reflect.Struct {
 			break
 		}
